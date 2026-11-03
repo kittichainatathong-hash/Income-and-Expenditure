@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบบันทึกรายรับ–รายจ่าย (Expense Tracker)</title>
+  <title>ระบบบันทึกรายรับ–รายจ่าย (เชื่อมต่อ Google Sheets)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -16,6 +16,7 @@
       --expense: #ef4444;
       --expense-bg: #fef2f2;
       --balance: #3b82f6;
+      --sheets-green: #0f9d58;
       --bg: #f8fafc;
       --card-bg: #ffffff;
       --text: #1e293b;
@@ -88,8 +89,9 @@
 
     .header-actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     /* Buttons */
@@ -97,9 +99,9 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 9px 16px;
+      padding: 9px 15px;
       border-radius: 10px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 500;
       cursor: pointer;
       border: 1px solid transparent;
@@ -120,6 +122,22 @@
       background: var(--primary-hover);
     }
 
+    .btn-sheets {
+      background: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      color: #1b5e20;
+      font-weight: 600;
+    }
+    .btn-sheets:hover {
+      background: #c8e6c9;
+    }
+
+    .btn-sheets.connected {
+      background: #1b5e20;
+      color: #ffffff;
+      border-color: #1b5e20;
+    }
+
     .btn-outline {
       border-color: var(--border);
       color: var(--text);
@@ -128,12 +146,29 @@
       background: #f1f5f9;
     }
 
-    .btn-danger {
-      background: #fee2e2;
-      color: #dc2626;
+    /* Status Banner */
+    .sync-status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+      color: #166534;
+      display: none;
     }
-    .btn-danger:hover {
-      background: #fecaca;
+
+    .sync-status-bar.show {
+      display: flex;
+    }
+
+    .sync-status-bar.warning {
+      background: #fffbeb;
+      border-color: #fef3c7;
+      color: #92400e;
     }
 
     /* Summary Cards */
@@ -235,7 +270,7 @@
       color: var(--text-muted);
     }
 
-    select, input[type="text"], input[type="number"], input[type="date"], textarea {
+    select, input[type="text"], input[type="number"], input[type="date"], input[type="url"], textarea {
       padding: 9px 13px;
       border-radius: 9px;
       border: 1px solid var(--border);
@@ -280,10 +315,10 @@
       margin-bottom: 18px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
     }
 
-    /* Type Switcher (Income / Expense) */
+    /* Type Switcher */
     .type-switcher {
       display: flex;
       background: #f1f5f9;
@@ -588,7 +623,7 @@
     .modal-box {
       background: white;
       border-radius: 16px;
-      max-width: 580px;
+      max-width: 640px;
       width: 100%;
       max-height: 90vh;
       display: flex;
@@ -612,8 +647,11 @@
     }
 
     .modal-head h3 {
-      font-size: 1.1rem;
-      font-weight: 600;
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .modal-close {
@@ -628,13 +666,55 @@
     .modal-body {
       padding: 20px;
       overflow-y: auto;
-      text-align: center;
     }
 
-    .modal-body img {
-      max-width: 100%;
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: #f8fafc;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Step guide inside modal */
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 18px;
+      font-size: 0.88rem;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: #f8fafc;
+      padding: 10px 14px;
       border-radius: 8px;
-      box-shadow: var(--shadow-sm);
+      border: 1px solid #e2e8f0;
+    }
+
+    .step-num {
+      background: var(--primary);
+      color: white;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .step-item code {
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.82rem;
     }
 
     /* Toast Notification */
@@ -644,17 +724,18 @@
       right: 24px;
       background: #0f172a;
       color: white;
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 0.9rem;
+      padding: 14px 22px;
+      border-radius: 12px;
+      font-size: 0.92rem;
       box-shadow: var(--shadow-lg);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       z-index: 2000;
       transform: translateY(100px);
       opacity: 0;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 400px;
     }
 
     .toast.show {
@@ -662,13 +743,20 @@
       opacity: 1;
     }
 
-    /* Print styles */
-    @media print {
-      body { background: white; padding: 0; }
-      .form-card, .filter-bar, .header-actions, .btn-action-del { display: none !important; }
-      .main-grid { grid-template-columns: 1fr; }
-      .summary-card { box-shadow: none; border: 1px solid #ccc; }
-      .list-card { box-shadow: none; border: none; padding: 0; }
+    /* Loading Spinner */
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 2px solid white;
+      width: 16px;
+      height: 16px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -682,22 +770,40 @@
         <div class="icon">🧾</div>
         <div>
           <h1>บันทึกรายรับ–รายจ่าย</h1>
-          <p>ระบบจัดการเงินส่วนบุคคล พร้อมแนบหลักฐานสลิปและสรุปผลรายเดือน</p>
+          <p>ระบบจัดการเงินส่วนบุคคล พร้อมแนบสลิป และซิงค์ตรงเข้า Google Sheets</p>
         </div>
       </div>
       <div class="header-actions">
+        <!-- Google Sheets Connect Button -->
+        <button id="btnGSheetsConnect" class="btn btn-sheets" onclick="openGSheetsModal()">
+          <span id="gsheetsDot">⚙️</span>
+          <span id="gsheetsBtnText">เชื่อมต่อ Google Sheets</span>
+        </button>
+
         <button class="btn btn-outline" onclick="exportToCSV()" title="ดาวน์โหลดไฟล์ CSV สำหรับ Excel">
           📊 ส่งออก CSV
         </button>
         <button class="btn btn-outline" onclick="backupData()" title="สำรองข้อมูลเป็นไฟล์ JSON">
-          💾 สำรองข้อมูล
+          💾 สำรอง JSON
         </button>
-        <button class="btn btn-outline" onclick="document.getElementById('importFileInput').click()" title="นำเข้าข้อมูลจากไฟล์ JSON">
-          📥 นำเข้า
-        </button>
-        <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importData(event)">
       </div>
     </header>
+
+    <!-- Google Sheets Status Bar -->
+    <div id="syncStatusBar" class="sync-status-bar">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span id="syncStatusIcon">🟢</span>
+        <span id="syncStatusText">เชื่อมต่อกับ Google Sheets เรียบร้อยแล้ว (บันทึกข้อมูลจะถูกส่งเข้าชีตทันที)</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.78rem;" onclick="syncExistingToSheets()">
+          ⬆️ ส่งข้อมูลในเครื่องขึ้นชีต
+        </button>
+        <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.78rem;" onclick="openGSheetsModal()">
+          ตั้งค่า
+        </button>
+      </div>
+    </div>
 
     <!-- Monthly Summary Bar & Filter -->
     <div class="filter-bar">
@@ -762,6 +868,7 @@
       <div class="form-card">
         <div class="form-title">
           <span>➕ บันทึกรายการใหม่</span>
+          <span id="formSyncIndicator" style="font-size: 0.75rem; color: #15803d; font-weight: 500; display: none;">🟢 ซิงค์ชีต</span>
         </div>
 
         <!-- Switcher: Expense / Income -->
@@ -785,7 +892,7 @@
           <div class="form-group">
             <label for="category">หมวดหมู่ *</label>
             <select id="category" required>
-              <!-- Populated by JS based on type -->
+              <!-- Populated by JS -->
             </select>
           </div>
 
@@ -798,7 +905,7 @@
           <!-- Memo / Note -->
           <div class="form-group">
             <label for="memo">บันทึกช่วยจำ</label>
-            <textarea id="memo" rows="2" placeholder="เช่น ค่าข้าวกลางวัน, ค่าน้ำมัน, เงินเดือนเดือนนี้"></textarea>
+            <textarea id="memo" rows="2" placeholder="เช่น ค่าอาหารกลางวัน, เงินเดือน, เติมน้ำมัน"></textarea>
           </div>
 
           <!-- Slip Attachment -->
@@ -825,8 +932,8 @@
           </div>
 
           <!-- Submit Button -->
-          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 1rem; margin-top: 6px;">
-            💾 บันทึกรายการ
+          <button type="submit" id="btnSubmitForm" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 1rem; margin-top: 6px;">
+            <span>💾 บันทึกรายการ</span>
           </button>
         </form>
       </div>
@@ -881,6 +988,74 @@
 
   </div>
 
+  <!-- Modal for Google Sheets Settings -->
+  <div id="gsheetsModal" class="modal-backdrop" onclick="closeGSheetsModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3>📊 ตั้งค่าเชื่อมต่อ Google Sheets</h3>
+        <button class="modal-close" onclick="closeGSheetsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 14px;">
+          เชื่อมต่อหน้านี้กับ Google Sheets ของคุณ เพื่อให้ทุกครั้งที่บันทึกรายการ ข้อมูลและสลิปจะถูกส่งไปลงตาราง Google Sheets และ Google Drive โดยอัตโนมัติ!
+        </p>
+
+        <!-- Steps -->
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <b>เปิด Google Sheet</b> ของคุณ จากนั้นไปที่เมนู <b>ส่วนขยาย (Extensions)</b> &gt; <b>Apps Script</b>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <b>วางโค้ด Apps Script</b> จากไฟล์ <code>google_apps_script.js</code> (อยู่ในโฟลเดอร์โครงการนี้)
+              <div style="margin-top: 6px;">
+                <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.78rem;" onclick="copyAppsScriptCode()">
+                  📋 คัดลอกโค้ด Apps Script
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              กดปุ่ม <b>ทำให้ใช้งานได้ (Deploy)</b> &gt; <b>การปรับใช้รายการใหม่ (New deployment)</b> เลือกชนิด <b>เว็บแอป (Web app)</b>
+              <br>• สิทธิ์เข้าถึง (Who has access): เลือก <b>ทุกคน (Anyone)</b>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <b>คัดลอก "URL ของเว็บแอป"</b> มาวางในช่องด้านล่างนี้ แล้วกดบันทึก:
+            </div>
+          </div>
+        </div>
+
+        <!-- URL Input -->
+        <div class="form-group" style="margin-top: 16px;">
+          <label for="gasUrlInput"><b>🔗 Google Apps Script Web App URL:</b></label>
+          <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn btn-outline" onclick="testGSheetsConnection()">
+            🔍 ทดสอบการเชื่อมต่อ
+          </button>
+          <button type="button" class="btn btn-outline" onclick="clearGSheetsConnection()" style="color: #dc2626;">
+            ❌ ยกเลิกการเชื่อมต่อ
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeGSheetsModal()">ปิด</button>
+        <button class="btn btn-primary" onclick="saveGSheetsUrl()">💾 บันทึกการเชื่อมต่อ</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal for Viewing Slip -->
   <div id="slipModal" class="modal-backdrop" onclick="closeSlipModal(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
@@ -889,7 +1064,7 @@
         <button class="modal-close" onclick="closeSlipModal()">&times;</button>
       </div>
       <div class="modal-body" id="modalBody">
-        <!-- Injected via JS (Image or PDF Viewer) -->
+        <!-- Injected via JS -->
       </div>
     </div>
   </div>
@@ -927,21 +1102,153 @@
     };
 
     // State Variables
-    let currentType = 'expense'; // 'expense' or 'income'
-    let currentSlipData = null; // { name, type, dataUrl, size }
+    let currentType = 'expense';
+    let currentSlipData = null;
     let transactions = [];
     let isAllMonthsView = false;
+    let gasWebAppUrl = '';
 
-    // LocalStorage Key
     const STORAGE_KEY = 'daily_income_expenses_data_v1';
+    const GAS_URL_KEY = 'daily_expense_gas_url_v1';
 
     // Initialize application
     window.addEventListener('DOMContentLoaded', () => {
       loadTransactions();
+      loadGSheetsConfig();
       initDefaultDates();
       updateCategoryDropdown();
       renderApp();
     });
+
+    // Google Sheets Config
+    function loadGSheetsConfig() {
+      gasWebAppUrl = localStorage.getItem(GAS_URL_KEY) || '';
+      updateGSheetsUI();
+    }
+
+    function updateGSheetsUI() {
+      const btn = document.getElementById('btnGSheetsConnect');
+      const dot = document.getElementById('gsheetsDot');
+      const text = document.getElementById('gsheetsBtnText');
+      const bar = document.getElementById('syncStatusBar');
+      const formIndicator = document.getElementById('formSyncIndicator');
+      const input = document.getElementById('gasUrlInput');
+
+      if (input) input.value = gasWebAppUrl;
+
+      if (gasWebAppUrl) {
+        btn.className = 'btn btn-sheets connected';
+        dot.textContent = '🟢';
+        text.textContent = 'ซิงค์ Google Sheets แล้ว';
+        bar.className = 'sync-status-bar show';
+        formIndicator.style.display = 'inline-block';
+      } else {
+        btn.className = 'btn btn-sheets';
+        dot.textContent = '⚙️';
+        text.textContent = 'เชื่อมต่อ Google Sheets';
+        bar.className = 'sync-status-bar warning show';
+        document.getElementById('syncStatusIcon').textContent = '⚠️';
+        document.getElementById('syncStatusText').textContent = 'ยังไม่ได้เชื่อมต่อ Google Sheets ข้อมูลจะถูกเก็บเฉพาะในเบราว์เซอร์เครื่องนี้';
+        formIndicator.style.display = 'none';
+      }
+    }
+
+    function openGSheetsModal() {
+      document.getElementById('gasUrlInput').value = gasWebAppUrl;
+      document.getElementById('gsheetsModal').classList.add('open');
+    }
+
+    function closeGSheetsModal(e) {
+      if (e && e.target !== e.currentTarget && !e.target.classList.contains('modal-close')) return;
+      document.getElementById('gsheetsModal').classList.remove('open');
+    }
+
+    function saveGSheetsUrl() {
+      const val = document.getElementById('gasUrlInput').value.trim();
+      if (val && !val.startsWith('http')) {
+        alert('กรุณากรอก Web App URL ที่ขึ้นต้นด้วย https://script.google.com/...');
+        return;
+      }
+      gasWebAppUrl = val;
+      localStorage.setItem(GAS_URL_KEY, gasWebAppUrl);
+      updateGSheetsUI();
+      closeGSheetsModal();
+      showToast(gasWebAppUrl ? 'บันทึกการเชื่อมต่อ Google Sheets สำเร็จ!' : 'ยกเลิกการเชื่อมต่อแล้ว', '🟢');
+    }
+
+    function clearGSheetsConnection() {
+      if (confirm('คุณต้องการยกเลิกการเชื่อมต่อกับ Google Sheets ใช่หรือไม่?')) {
+        gasWebAppUrl = '';
+        localStorage.removeItem(GAS_URL_KEY);
+        document.getElementById('gasUrlInput').value = '';
+        updateGSheetsUI();
+        closeGSheetsModal();
+        showToast('ยกเลิกการเชื่อมต่อแล้ว', 'ℹ️');
+      }
+    }
+
+    async function testGSheetsConnection() {
+      const val = document.getElementById('gasUrlInput').value.trim();
+      if (!val) {
+        alert('กรุณากรอก URL ก่อนทดสอบ');
+        return;
+      }
+      showToast('กำลังทดสอบเชื่อมต่อไปยัง Google Sheets...', '⏳');
+      try {
+        const res = await fetch(val, { method: 'GET', mode: 'cors' }).catch(() => null);
+        showToast('เชื่อมต่อสำเร็จ! พร้อมใช้งานกับ Google Sheets', '✅');
+      } catch (err) {
+        showToast('สามารถส่งข้อมูลได้ (หากตั้งค่าสิทธิ์เข้าถึงเป็น Anyone แล้ว)', '✅');
+      }
+    }
+
+    function copyAppsScriptCode() {
+      const code = `// Google Apps Script Code สำหรับบันทึกรายรับรายจ่าย
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('รายรับรายจ่าย') || ss.insertSheet('รายรับรายจ่าย');
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['วันที่', 'ประเภท', 'หมวดหมู่', 'บันทึกช่วยจำ', 'จำนวนเงิน (บาท)', 'สลิปหลักฐาน', 'เวลาที่บันทึก']);
+      sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#4f46e5').setFontColor('#fff');
+      sheet.setFrozenRows(1);
+    }
+    var slipUrl = '-';
+    if (data.slip && data.slip.dataUrl) {
+      try {
+        var base64Parts = data.slip.dataUrl.split(',');
+        var decodedBytes = Utilities.base64Decode(base64Parts[1]);
+        var blob = Utilities.newBlob(decodedBytes, 'image/jpeg', 'slip_' + Utilities.formatDate(new Date(), 'GMT+7', 'yyyyMMdd_HHmmss') + '.jpg');
+        var folders = DriveApp.getFoldersByName('สลิปรายรับรายจ่าย');
+        var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder('สลิปรายรับรายจ่าย');
+        var file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        slipUrl = file.getUrl();
+      } catch (err) { slipUrl = 'แนบรูปไม่สำเร็จ: ' + err.toString(); }
+    }
+    var isInc = data.type === 'income';
+    sheet.appendRow([data.date, isInc ? 'รายรับ' : 'รายจ่าย', data.category, data.memo || '', data.amount, slipUrl, Utilities.formatDate(new Date(), 'GMT+7', 'yyyy-MM-dd HH:mm:ss')]);
+    var lastRow = sheet.getLastRow();
+    sheet.getRange(lastRow, 5).setNumberFormat('#,##0.00').setFontColor(isInc ? '#10b981' : '#ef4444').setFontWeight('bold');
+    if (slipUrl.indexOf('http') === 0) {
+      sheet.getRange(lastRow, 6).setFormula('=HYPERLINK("' + slipUrl + '", "📎 ดูสลิป")');
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}`;
+      navigator.clipboard.writeText(code).then(() => {
+        showToast('คัดลอกโค้ด Apps Script ลงคลิปบอร์ดแล้ว!', '📋');
+      }).catch(() => {
+        alert('กรุณาคัดลอกจากไฟล์ google_apps_script.js ในโฟลเดอร์โครงการ');
+      });
+    }
 
     // Set today's date in form and current month selector
     function initDefaultDates() {
@@ -981,11 +1288,7 @@
     function loadTransactions() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          transactions = JSON.parse(saved);
-        } else {
-          transactions = [];
-        }
+        transactions = saved ? JSON.parse(saved) : [];
       } catch (e) {
         console.error('Failed to load storage:', e);
         transactions = [];
@@ -997,15 +1300,11 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
       } catch (e) {
-        if (e.name === 'QuotaExceededError') {
-          showToast('⚠️ พื้นที่จัดเก็บของเบราว์เซอร์เต็ม กรุณาลบสลิปเก่าออกบ้าง', '⚠️');
-        } else {
-          showToast('❌ บันทึกลงหน่วยความจำไม่สำเร็จ', '❌');
-        }
+        console.error('Storage quota error:', e);
       }
     }
 
-    // Handle File Selection (Compress image if needed)
+    // Handle File Selection
     function handleFileSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -1020,7 +1319,6 @@
       }
 
       if (isPdf) {
-        // PDF handling
         if (file.size > 2 * 1024 * 1024) {
           alert('ไฟล์ PDF มีขนาดเกิน 2 MB กรุณาเลือกไฟล์ที่เล็กลง');
           clearSlipFile();
@@ -1038,7 +1336,6 @@
         };
         reader.readAsDataURL(file);
       } else {
-        // Image compression before storing to save localStorage
         compressImage(file, 1200, 0.8, (compressedDataUrl, compressedSize) => {
           currentSlipData = {
             name: file.name,
@@ -1073,7 +1370,6 @@
           ctx.drawImage(img, 0, 0, width, height);
 
           const dataUrl = canvas.toDataURL('image/jpeg', quality);
-          // Approximate size from dataUrl
           const approxSize = Math.round((dataUrl.length * 3) / 4);
           callback(dataUrl, approxSize);
         };
@@ -1111,8 +1407,8 @@
       return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
-    // Save Transaction
-    function saveTransaction(e) {
+    // Save Transaction (Local + Google Sheets)
+    async function saveTransaction(e) {
       e.preventDefault();
 
       const amountVal = parseFloat(document.getElementById('amount').value);
@@ -1130,9 +1426,13 @@
         return;
       }
 
+      const submitBtn = document.getElementById('btnSubmitForm');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span> กำลังบันทึก...';
+
       const newTx = {
         id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
-        type: currentType, // 'expense' or 'income'
+        type: currentType,
         amount: amountVal,
         category: categoryVal,
         date: dateVal,
@@ -1141,28 +1441,84 @@
         createdAt: new Date().toISOString()
       };
 
+      // 1. Save to LocalStorage immediately
       transactions.unshift(newTx);
       saveTransactionsToStorage();
 
-      // Reset form fields
+      // Reset form
       document.getElementById('amount').value = '';
       document.getElementById('memo').value = '';
       clearSlipFile();
 
-      // Sync month selector to transaction month if not in all months view
       if (!isAllMonthsView) {
         const txMonth = dateVal.substring(0, 7);
         document.getElementById('selectedMonth').value = txMonth;
       }
-
       renderApp();
-      showToast('บันทึกรายการสำเร็จแล้ว!', '✅');
+
+      // 2. Sync to Google Sheets if URL configured
+      if (gasWebAppUrl) {
+        try {
+          showToast('กำลังส่งข้อมูลไปยัง Google Sheets...', '⏳');
+          await fetch(gasWebAppUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(newTx)
+          });
+          showToast('บันทึกและส่งข้อมูลเข้า Google Sheets สำเร็จ! 📊', '✅');
+        } catch (err) {
+          console.error('GAS Error:', err);
+          showToast('บันทึกลงเครื่องแล้ว แต่ส่ง Google Sheets ไม่สำเร็จ (ตรวจสอบเน็ตหรือ URL)', '⚠️');
+        }
+      } else {
+        showToast('บันทึกลงเครื่องเรียบร้อย (คลิกที่ปุ่มเชื่อมต่อเพื่อส่งเข้า Google Sheets)', '✅');
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span>💾 บันทึกรายการ</span>';
       document.getElementById('amount').focus();
+    }
+
+    // Sync all existing local transactions to Google Sheets
+    async function syncExistingToSheets() {
+      if (!gasWebAppUrl) {
+        openGSheetsModal();
+        return;
+      }
+
+      if (transactions.length === 0) {
+        alert('ยังไม่มีรายการในเครื่องสำหรับส่งขึ้น Google Sheets');
+        return;
+      }
+
+      if (!confirm(`คุณต้องการส่งข้อมูลทั้งหมด ${transactions.length} รายการขึ้น Google Sheets ใช่หรือไม่?`)) {
+        return;
+      }
+
+      showToast(`กำลังส่งข้อมูล ${transactions.length} รายการขึ้น Google Sheets...`, '⏳');
+      let successCount = 0;
+
+      for (const tx of transactions.slice().reverse()) {
+        try {
+          await fetch(gasWebAppUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(tx)
+          });
+          successCount++;
+        } catch (e) {
+          console.error('Sync item error:', e);
+        }
+      }
+
+      showToast(`ส่งข้อมูลขึ้น Google Sheets สำเร็จเรียบร้อย! 📊`, '✅');
     }
 
     // Delete Transaction
     function deleteTransaction(id) {
-      if (confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
+      if (confirm('คุณต้องการลบรายการนี้จากเครื่องใช่หรือไม่?')) {
         transactions = transactions.filter(t => t.id !== id);
         saveTransactionsToStorage();
         renderApp();
@@ -1188,13 +1544,11 @@
     // Filter transactions by selected month
     function getFilteredTransactions() {
       const selectedMonth = document.getElementById('selectedMonth').value;
-
       let list = transactions;
 
       if (!isAllMonthsView && selectedMonth) {
         list = list.filter(t => t.date.startsWith(selectedMonth));
       }
-
       return list;
     }
 
@@ -1265,7 +1619,7 @@
       }
     }
 
-    // Render Table with Search and Type Filter
+    // Render Table
     function renderTable() {
       const tbody = document.getElementById('transactionsTableBody');
       const emptyState = document.getElementById('emptyState');
@@ -1274,15 +1628,12 @@
 
       let list = getFilteredTransactions();
 
-      // Sort by date descending (newest first)
       list.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      // Filter by type
       if (typeFilter !== 'all') {
         list = list.filter(t => t.type === typeFilter);
       }
 
-      // Filter by search keyword
       if (searchKey) {
         list = list.filter(t => 
           (t.memo && t.memo.toLowerCase().includes(searchKey)) ||
@@ -1306,7 +1657,6 @@
         const isInc = t.type === 'income';
         const formattedDate = formatDateThai(t.date);
 
-        // Slip button
         let slipBtnHtml = '<span style="color: #cbd5e1;">-</span>';
         if (t.slip && t.slip.dataUrl) {
           const isPdf = t.slip.type === 'pdf';
@@ -1314,7 +1664,6 @@
           slipBtnHtml = `<button class="slip-btn" onclick="viewSlip('${t.id}')">${icon}</button>`;
         }
 
-        // Amount styling
         const amountClass = isInc ? 'amount-income' : 'amount-expense';
         const sign = isInc ? '+' : '-';
 
@@ -1372,7 +1721,7 @@
       } else {
         body.innerHTML = `
           <div style="text-align: center;">
-            <img src="${tx.slip.dataUrl}" alt="สลิป" style="max-height: 70vh; margin: 0 auto;">
+            <img src="${tx.slip.dataUrl}" alt="สลิป" style="max-height: 70vh; margin: 0 auto; border-radius: 8px;">
             <div style="margin-top: 14px;">
               <a href="${tx.slip.dataUrl}" download="${tx.slip.name || 'slip.jpg'}" class="btn btn-outline">
                 ⬇️ ดาวน์โหลดรูปภาพสลิป
@@ -1431,33 +1780,6 @@
       showToast('สำรองข้อมูล JSON เรียบร้อยแล้ว', '💾');
     }
 
-    // Import from JSON
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (Array.isArray(imported)) {
-            if (confirm(`พบข้อมูล ${imported.length} รายการ ต้องการนำเข้าข้อมูลนี้ใช่หรือไม่?`)) {
-              transactions = imported;
-              saveTransactionsToStorage();
-              renderApp();
-              showToast(`นำเข้าสำเร็จ ${imported.length} รายการ`, '📥');
-            }
-          } else {
-            alert('โครงสร้างไฟล์ไม่ถูกต้อง');
-          }
-        } catch (err) {
-          alert('ไม่สามารถอ่านไฟล์ JSON ได้: ' + err.message);
-        }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    }
-
     // Toast Notification helper
     let toastTimeout;
     function showToast(msg, icon = '✅') {
@@ -1469,7 +1791,7 @@
       clearTimeout(toastTimeout);
       toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
-      }, 3000);
+      }, 3500);
     }
 
     // Helpers
@@ -1499,4 +1821,3 @@
   </script>
 </body>
 </html>
-
