@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบันทึกรายรับ–รายจ่าย (Expense Tracker)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --income: #10b981;
+      --income-bg: #ecfdf5;
+      --expense: #ef4444;
+      --expense-bg: #fef2f2;
+      --balance: #3b82f6;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    .container {
+      max-width: 1050px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title .icon {
+      font-size: 2rem;
+      background: #eef2ff;
+      color: var(--primary);
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-title h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .header-title p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-outline {
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover {
+      background: #f1f5f9;
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .btn-danger:hover {
+      background: #fecaca;
+    }
+
+    /* Summary Cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    .card-income::before { background: var(--income); }
+    .card-expense::before { background: var(--expense); }
+    .card-balance::before { background: var(--balance); }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .card-head .badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-income { background: var(--income-bg); color: var(--income); }
+    .badge-expense { background: var(--expense-bg); color: var(--expense); }
+    .badge-balance { background: #eff6ff; color: var(--balance); }
+
+    .card-amount {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .card-income .card-amount { color: var(--income); }
+    .card-expense .card-amount { color: var(--expense); }
+    .card-balance .card-amount { color: #0f172a; }
+
+    .card-subtext {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Filter & Month Selector Bar */
+    .filter-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    select, input[type="text"], input[type="number"], input[type="date"], textarea {
+      padding: 9px 13px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      background: #ffffff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    /* Main Grid Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Form Card */
+    .form-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 22px;
+    }
+
+    .form-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Type Switcher (Income / Expense) */
+    .type-switcher {
+      display: flex;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      gap: 4px;
+    }
+
+    .type-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--text-muted);
+    }
+
+    .type-btn.active-expense {
+      background: #ffffff;
+      color: var(--expense);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .type-btn.active-income {
+      background: #ffffff;
+      color: var(--income);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+    }
+
+    /* File Drop Zone */
+    .file-dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f8fafc;
+      position: relative;
+    }
+
+    .file-dropzone:hover, .file-dropzone.dragover {
+      border-color: var(--primary);
+      background: #eef2ff;
+    }
+
+    .file-dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .dropzone-content {
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dropzone-content .icon {
+      font-size: 1.6rem;
+      color: var(--primary);
+    }
+
+    .dropzone-content p {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .dropzone-content span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .slip-preview-container {
+      margin-top: 10px;
+      position: relative;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #f1f5f9;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .slip-preview-img {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .slip-file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .slip-file-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .slip-file-size {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .slip-remove-btn {
+      background: #fee2e2;
+      border: none;
+      color: #dc2626;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    /* List Card */
+    .list-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 22px;
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .list-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-input {
+      min-width: 200px;
+    }
+
+    /* Table */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      padding: 12px 14px;
+      background: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: #fcfdfe;
+    }
+
+    .badge-category {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .amount-income {
+      color: var(--income);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .amount-expense {
+      color: var(--expense);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .slip-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px;
+      background: #e0e7ff;
+      color: #3730a3;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .slip-btn:hover {
+      background: #c7d2fe;
+    }
+
+    .btn-action-del {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .btn-action-del:hover {
+      color: #dc2626;
+      background: #fee2e2;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--text-muted);
+    }
+    .empty-state .icon {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      max-width: 580px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-head h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      text-align: center;
+    }
+
+    .modal-body img {
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 2000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Print styles */
+    @media print {
+      body { background: white; padding: 0; }
+      .form-card, .filter-bar, .header-actions, .btn-action-del { display: none !important; }
+      .main-grid { grid-template-columns: 1fr; }
+      .summary-card { box-shadow: none; border: 1px solid #ccc; }
+      .list-card { box-shadow: none; border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Header Section -->
+    <header>
+      <div class="header-title">
+        <div class="icon">🧾</div>
+        <div>
+          <h1>บันทึกรายรับ–รายจ่าย</h1>
+          <p>ระบบจัดการเงินส่วนบุคคล พร้อมแนบหลักฐานสลิปและสรุปผลรายเดือน</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="exportToCSV()" title="ดาวน์โหลดไฟล์ CSV สำหรับ Excel">
+          📊 ส่งออก CSV
+        </button>
+        <button class="btn btn-outline" onclick="backupData()" title="สำรองข้อมูลเป็นไฟล์ JSON">
+          💾 สำรองข้อมูล
+        </button>
+        <button class="btn btn-outline" onclick="document.getElementById('importFileInput').click()" title="นำเข้าข้อมูลจากไฟล์ JSON">
+          📥 นำเข้า
+        </button>
+        <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importData(event)">
+      </div>
+    </header>
+
+    <!-- Monthly Summary Bar & Filter -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">📅 รอบเดือนที่เลือก:</span>
+        <input type="month" id="selectedMonth" onchange="renderApp()">
+        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.82rem;" onclick="resetToCurrentMonth()">
+          เดือนปัจจุบัน
+        </button>
+        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.82rem;" onclick="showAllMonths()">
+          แสดงทั้งหมด
+        </button>
+      </div>
+      <div class="filter-group">
+        <span id="filteredRangeText" style="font-size: 0.85rem; color: var(--text-muted);"></span>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <!-- Income -->
+      <div class="summary-card card-income">
+        <div>
+          <div class="card-head">
+            <span>รายรับ (Income)</span>
+            <span class="badge badge-income" id="incomeCount">0 รายการ</span>
+          </div>
+          <div class="card-amount" id="totalIncome">฿0.00</div>
+        </div>
+        <div class="card-subtext">เงินเข้าทั้งหมดในรอบที่เลือก</div>
+      </div>
+
+      <!-- Expense -->
+      <div class="summary-card card-expense">
+        <div>
+          <div class="card-head">
+            <span>รายจ่าย (Expense)</span>
+            <span class="badge badge-expense" id="expenseCount">0 รายการ</span>
+          </div>
+          <div class="card-amount" id="totalExpense">฿0.00</div>
+        </div>
+        <div class="card-subtext">เงินออกทั้งหมดในรอบที่เลือก</div>
+      </div>
+
+      <!-- Balance -->
+      <div class="summary-card card-balance">
+        <div>
+          <div class="card-head">
+            <span>คงเหลือ (Balance)</span>
+            <span class="badge badge-balance" id="balanceStatus">สุทธิ</span>
+          </div>
+          <div class="card-amount" id="totalBalance">฿0.00</div>
+        </div>
+        <div class="card-subtext" id="balanceSubtext">เงินคงเหลือสุทธิ</div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Grid -->
+    <div class="main-grid">
+
+      <!-- Form Section -->
+      <div class="form-card">
+        <div class="form-title">
+          <span>➕ บันทึกรายการใหม่</span>
+        </div>
+
+        <!-- Switcher: Expense / Income -->
+        <div class="type-switcher">
+          <button type="button" id="btnTypeExpense" class="type-btn active-expense" onclick="setType('expense')">
+            💸 รายจ่าย
+          </button>
+          <button type="button" id="btnTypeIncome" class="type-btn" onclick="setType('income')">
+            💰 รายรับ
+          </button>
+        </div>
+
+        <form id="transactionForm" onsubmit="saveTransaction(event)">
+          <!-- Amount -->
+          <div class="form-group">
+            <label for="amount">จำนวนเงิน (บาท) *</label>
+            <input type="number" id="amount" step="0.01" min="0.01" placeholder="0.00" required autofocus>
+          </div>
+
+          <!-- Category -->
+          <div class="form-group">
+            <label for="category">หมวดหมู่ *</label>
+            <select id="category" required>
+              <!-- Populated by JS based on type -->
+            </select>
+          </div>
+
+          <!-- Date -->
+          <div class="form-group">
+            <label for="txDate">วันที่ *</label>
+            <input type="date" id="txDate" required>
+          </div>
+
+          <!-- Memo / Note -->
+          <div class="form-group">
+            <label for="memo">บันทึกช่วยจำ</label>
+            <textarea id="memo" rows="2" placeholder="เช่น ค่าข้าวกลางวัน, ค่าน้ำมัน, เงินเดือนเดือนนี้"></textarea>
+          </div>
+
+          <!-- Slip Attachment -->
+          <div class="form-group">
+            <label>📎 แนบสลิป (รูปภาพ/PDF)</label>
+            <div class="file-dropzone" id="dropzone">
+              <input type="file" id="slipFileInput" accept="image/*,application/pdf" onchange="handleFileSelect(event)">
+              <div class="dropzone-content">
+                <span class="icon">🖼️</span>
+                <p>คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวาง</p>
+                <span>รองรับรูปภาพ (JPG, PNG) หรือไฟล์ PDF</span>
+              </div>
+            </div>
+
+            <!-- Preview box -->
+            <div id="slipPreviewBox" class="slip-preview-container">
+              <img id="slipPreviewImg" class="slip-preview-img" src="" alt="สลิป">
+              <div class="slip-file-info">
+                <div id="slipFileName" class="slip-file-name">filename.jpg</div>
+                <div id="slipFileSize" class="slip-file-size">0 KB</div>
+              </div>
+              <button type="button" class="slip-remove-btn" onclick="clearSlipFile()" title="ลบสลิปนี้">✕</button>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 1rem; margin-top: 6px;">
+            💾 บันทึกรายการ
+          </button>
+        </form>
+      </div>
+
+      <!-- Transactions List Section -->
+      <div class="list-card">
+        <div class="list-header">
+          <div class="list-title">
+            <span>📋 รายการบันทึก</span>
+            <span id="filteredCountBadge" style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">(0 รายการ)</span>
+          </div>
+
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 ค้นหาบันทึก / หมวดหมู่..." oninput="renderTable()">
+            <select id="typeFilter" onchange="renderTable()" style="padding: 7px 10px; font-size: 0.85rem;">
+              <option value="all">ทุกประเภท</option>
+              <option value="expense">เฉพาะรายจ่าย</option>
+              <option value="income">เฉพาะรายรับ</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>วันที่</th>
+                <th>ประเภท</th>
+                <th>หมวดหมู่</th>
+                <th>บันทึกช่วยจำ</th>
+                <th style="text-align: right;">จำนวนเงิน</th>
+                <th style="text-align: center;">สลิป</th>
+                <th style="text-align: center;">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsTableBody">
+              <!-- Rendered via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty state message -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+          <span class="icon">🧾</span>
+          <p>ยังไม่มีรายการบันทึกในรอบนี้</p>
+          <span style="font-size: 0.8rem;">กรอกแบบฟอร์มด้านซ้ายเพื่อเพิ่มรายการแรกของคุณ</span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Modal for Viewing Slip -->
+  <div id="slipModal" class="modal-backdrop" onclick="closeSlipModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3 id="modalTitle">หลักฐานการโอน / สลิป</h3>
+        <button class="modal-close" onclick="closeSlipModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Injected via JS (Image or PDF Viewer) -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <span id="toastIcon">✅</span>
+    <span id="toastMsg">บันทึกข้อมูลสำเร็จ</span>
+  </div>
+
+  <script>
+    // Categories configuration with icons
+    const CATEGORIES = {
+      expense: [
+        { id: 'food', name: 'อาหารและเครื่องดื่ม', icon: '🍜' },
+        { id: 'transport', name: 'การเดินทาง / น้ำมัน', icon: '🚗' },
+        { id: 'shopping', name: 'ช้อปปิ้ง / ของใช้', icon: '🛒' },
+        { id: 'utilities', name: 'ค่าน้ำ / ค่าไฟ / ค่าเน็ต', icon: '💡' },
+        { id: 'rent', name: 'ค่าเช่าบ้าน / ที่พัก', icon: '🏠' },
+        { id: 'medical', name: 'สุขภาพ / ยารักษาโรค', icon: '💊' },
+        { id: 'entertainment', name: 'บันเทิง / ท่องเที่ยว', icon: '🎬' },
+        { id: 'family', name: 'ให้ครอบครัว / กตัญญู', icon: '👨‍👩‍👦' },
+        { id: 'education', name: 'การศึกษา / หนังสือ', icon: '📚' },
+        { id: 'other_exp', name: 'อื่นๆ (รายจ่าย)', icon: '📦' }
+      ],
+      income: [
+        { id: 'salary', name: 'เงินเดือน / ค่าจ้าง', icon: '💰' },
+        { id: 'freelance', name: 'งานเสริม / ฟรีแลนซ์', icon: '💼' },
+        { id: 'investment', name: 'เงินปันผล / กำไรหุ้น', icon: '📈' },
+        { id: 'business', name: 'กำไรจากการค้าขาย', icon: '🏪' },
+        { id: 'bonus', name: 'โบนัส / เงินรางวัล', icon: '🎁' },
+        { id: 'interest', name: 'ดอกเบี้ย / เงินคืน', icon: '🏦' },
+        { id: 'other_inc', name: 'อื่นๆ (รายรับ)', icon: '💵' }
+      ]
+    };
+
+    // State Variables
+    let currentType = 'expense'; // 'expense' or 'income'
+    let currentSlipData = null; // { name, type, dataUrl, size }
+    let transactions = [];
+    let isAllMonthsView = false;
+
+    // LocalStorage Key
+    const STORAGE_KEY = 'daily_income_expenses_data_v1';
+
+    // Initialize application
+    window.addEventListener('DOMContentLoaded', () => {
+      loadTransactions();
+      initDefaultDates();
+      updateCategoryDropdown();
+      renderApp();
+    });
+
+    // Set today's date in form and current month selector
+    function initDefaultDates() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+
+      document.getElementById('txDate').value = `${yyyy}-${mm}-${dd}`;
+      document.getElementById('selectedMonth').value = `${yyyy}-${mm}`;
+    }
+
+    // Toggle Type (Expense / Income)
+    function setType(type) {
+      currentType = type;
+      const btnExp = document.getElementById('btnTypeExpense');
+      const btnInc = document.getElementById('btnTypeIncome');
+
+      if (type === 'expense') {
+        btnExp.className = 'type-btn active-expense';
+        btnInc.className = 'type-btn';
+      } else {
+        btnInc.className = 'type-btn active-income';
+        btnExp.className = 'type-btn';
+      }
+      updateCategoryDropdown();
+    }
+
+    // Populate category dropdown based on current type
+    function updateCategoryDropdown() {
+      const catSelect = document.getElementById('category');
+      const list = CATEGORIES[currentType] || [];
+      catSelect.innerHTML = list.map(c => `<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+    }
+
+    // Load data from localStorage
+    function loadTransactions() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          transactions = JSON.parse(saved);
+        } else {
+          transactions = [];
+        }
+      } catch (e) {
+        console.error('Failed to load storage:', e);
+        transactions = [];
+      }
+    }
+
+    // Save transactions to localStorage
+    function saveTransactionsToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+          showToast('⚠️ พื้นที่จัดเก็บของเบราว์เซอร์เต็ม กรุณาลบสลิปเก่าออกบ้าง', '⚠️');
+        } else {
+          showToast('❌ บันทึกลงหน่วยความจำไม่สำเร็จ', '❌');
+        }
+      }
+    }
+
+    // Handle File Selection (Compress image if needed)
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const isImage = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf';
+
+      if (!isImage && !isPdf) {
+        alert('กรุณาเลือกไฟล์รูปภาพ (.jpg, .png) หรือไฟล์ PDF เท่านั้น');
+        clearSlipFile();
+        return;
+      }
+
+      if (isPdf) {
+        // PDF handling
+        if (file.size > 2 * 1024 * 1024) {
+          alert('ไฟล์ PDF มีขนาดเกิน 2 MB กรุณาเลือกไฟล์ที่เล็กลง');
+          clearSlipFile();
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          currentSlipData = {
+            name: file.name,
+            type: 'pdf',
+            size: formatFileSize(file.size),
+            dataUrl: e.target.result
+          };
+          displaySlipPreview(currentSlipData);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Image compression before storing to save localStorage
+        compressImage(file, 1200, 0.8, (compressedDataUrl, compressedSize) => {
+          currentSlipData = {
+            name: file.name,
+            type: 'image',
+            size: formatFileSize(compressedSize),
+            dataUrl: compressedDataUrl
+          };
+          displaySlipPreview(currentSlipData);
+        });
+      }
+    }
+
+    // Compress image using HTML Canvas
+    function compressImage(file, maxWidth, quality, callback) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          // Approximate size from dataUrl
+          const approxSize = Math.round((dataUrl.length * 3) / 4);
+          callback(dataUrl, approxSize);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function displaySlipPreview(slip) {
+      const box = document.getElementById('slipPreviewBox');
+      const img = document.getElementById('slipPreviewImg');
+      const name = document.getElementById('slipFileName');
+      const size = document.getElementById('slipFileSize');
+
+      if (slip.type === 'pdf') {
+        img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%23dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>';
+      } else {
+        img.src = slip.dataUrl;
+      }
+
+      name.textContent = slip.name;
+      size.textContent = slip.size;
+      box.style.display = 'flex';
+    }
+
+    function clearSlipFile() {
+      currentSlipData = null;
+      document.getElementById('slipFileInput').value = '';
+      document.getElementById('slipPreviewBox').style.display = 'none';
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // Save Transaction
+    function saveTransaction(e) {
+      e.preventDefault();
+
+      const amountVal = parseFloat(document.getElementById('amount').value);
+      const categoryVal = document.getElementById('category').value;
+      const dateVal = document.getElementById('txDate').value;
+      const memoVal = document.getElementById('memo').value.trim();
+
+      if (isNaN(amountVal) || amountVal <= 0) {
+        alert('กรุณากรอกจำนวนเงินที่ถูกต้อง (มากกว่า 0)');
+        return;
+      }
+
+      if (!dateVal) {
+        alert('กรุณาเลือกวันที่');
+        return;
+      }
+
+      const newTx = {
+        id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
+        type: currentType, // 'expense' or 'income'
+        amount: amountVal,
+        category: categoryVal,
+        date: dateVal,
+        memo: memoVal,
+        slip: currentSlipData ? { ...currentSlipData } : null,
+        createdAt: new Date().toISOString()
+      };
+
+      transactions.unshift(newTx);
+      saveTransactionsToStorage();
+
+      // Reset form fields
+      document.getElementById('amount').value = '';
+      document.getElementById('memo').value = '';
+      clearSlipFile();
+
+      // Sync month selector to transaction month if not in all months view
+      if (!isAllMonthsView) {
+        const txMonth = dateVal.substring(0, 7);
+        document.getElementById('selectedMonth').value = txMonth;
+      }
+
+      renderApp();
+      showToast('บันทึกรายการสำเร็จแล้ว!', '✅');
+      document.getElementById('amount').focus();
+    }
+
+    // Delete Transaction
+    function deleteTransaction(id) {
+      if (confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
+        transactions = transactions.filter(t => t.id !== id);
+        saveTransactionsToStorage();
+        renderApp();
+        showToast('ลบรายการเรียบร้อยแล้ว', '🗑️');
+      }
+    }
+
+    // Month Navigation Helpers
+    function resetToCurrentMonth() {
+      isAllMonthsView = false;
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      document.getElementById('selectedMonth').value = `${yyyy}-${mm}`;
+      renderApp();
+    }
+
+    function showAllMonths() {
+      isAllMonthsView = true;
+      renderApp();
+    }
+
+    // Filter transactions by selected month
+    function getFilteredTransactions() {
+      const selectedMonth = document.getElementById('selectedMonth').value;
+
+      let list = transactions;
+
+      if (!isAllMonthsView && selectedMonth) {
+        list = list.filter(t => t.date.startsWith(selectedMonth));
+      }
+
+      return list;
+    }
+
+    // Render Full App State
+    function renderApp() {
+      const selectedMonth = document.getElementById('selectedMonth').value;
+      const rangeText = document.getElementById('filteredRangeText');
+
+      if (isAllMonthsView) {
+        rangeText.textContent = 'แสดงข้อมูลทุกเดือน (ทั้งหมด)';
+      } else if (selectedMonth) {
+        const [year, month] = selectedMonth.split('-');
+        const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        const thaiYear = parseInt(year) + 543;
+        rangeText.textContent = `เดือน ${thaiMonths[parseInt(month) - 1]} พ.ศ. ${thaiYear}`;
+      }
+
+      renderSummary();
+      renderTable();
+    }
+
+    // Calculate & Render Summary Cards
+    function renderSummary() {
+      const currentList = getFilteredTransactions();
+
+      let totalIncome = 0;
+      let incomeCount = 0;
+      let totalExpense = 0;
+      let expenseCount = 0;
+
+      currentList.forEach(t => {
+        if (t.type === 'income') {
+          totalIncome += t.amount;
+          incomeCount++;
+        } else if (t.type === 'expense') {
+          totalExpense += t.amount;
+          expenseCount++;
+        }
+      });
+
+      const balance = totalIncome - totalExpense;
+
+      // Update Income
+      document.getElementById('totalIncome').textContent = '฿' + formatNumber(totalIncome);
+      document.getElementById('incomeCount').textContent = `${incomeCount} รายการ`;
+
+      // Update Expense
+      document.getElementById('totalExpense').textContent = '฿' + formatNumber(totalExpense);
+      document.getElementById('expenseCount').textContent = `${expenseCount} รายการ`;
+
+      // Update Balance
+      const balEl = document.getElementById('totalBalance');
+      const balStatus = document.getElementById('balanceStatus');
+      const balSubtext = document.getElementById('balanceSubtext');
+
+      balEl.textContent = '฿' + formatNumber(balance);
+
+      if (balance >= 0) {
+        balEl.style.color = '#10b981';
+        balStatus.className = 'badge badge-income';
+        balStatus.textContent = 'กำไร / สุทธิ';
+        balSubtext.textContent = 'สถานะการเงินปกติ';
+      } else {
+        balEl.style.color = '#ef4444';
+        balStatus.className = 'badge badge-expense';
+        balStatus.textContent = 'ติดลบ';
+        balSubtext.textContent = 'รายจ่ายมากกว่ารายรับ';
+      }
+    }
+
+    // Render Table with Search and Type Filter
+    function renderTable() {
+      const tbody = document.getElementById('transactionsTableBody');
+      const emptyState = document.getElementById('emptyState');
+      const searchKey = document.getElementById('searchInput').value.trim().toLowerCase();
+      const typeFilter = document.getElementById('typeFilter').value;
+
+      let list = getFilteredTransactions();
+
+      // Sort by date descending (newest first)
+      list.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      // Filter by type
+      if (typeFilter !== 'all') {
+        list = list.filter(t => t.type === typeFilter);
+      }
+
+      // Filter by search keyword
+      if (searchKey) {
+        list = list.filter(t => 
+          (t.memo && t.memo.toLowerCase().includes(searchKey)) ||
+          (t.category && t.category.toLowerCase().includes(searchKey)) ||
+          (t.date && t.date.includes(searchKey))
+        );
+      }
+
+      document.getElementById('filteredCountBadge').textContent = `(${list.length} รายการ)`;
+
+      if (list.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      let html = '';
+      list.forEach(t => {
+        const isInc = t.type === 'income';
+        const formattedDate = formatDateThai(t.date);
+
+        // Slip button
+        let slipBtnHtml = '<span style="color: #cbd5e1;">-</span>';
+        if (t.slip && t.slip.dataUrl) {
+          const isPdf = t.slip.type === 'pdf';
+          const icon = isPdf ? '📄 PDF' : '🖼️ สลิป';
+          slipBtnHtml = `<button class="slip-btn" onclick="viewSlip('${t.id}')">${icon}</button>`;
+        }
+
+        // Amount styling
+        const amountClass = isInc ? 'amount-income' : 'amount-expense';
+        const sign = isInc ? '+' : '-';
+
+        html += `
+          <tr>
+            <td style="white-space: nowrap; font-weight: 500;">${formattedDate}</td>
+            <td>
+              <span class="badge ${isInc ? 'badge-income' : 'badge-expense'}">
+                ${isInc ? 'รายรับ' : 'รายจ่าย'}
+              </span>
+            </td>
+            <td>
+              <span class="badge-category">${t.category}</span>
+            </td>
+            <td style="max-width: 220px; word-break: break-word;">${escapeHtml(t.memo || '-')}</td>
+            <td style="text-align: right;" class="${amountClass}">
+              ${sign}฿${formatNumber(t.amount)}
+            </td>
+            <td style="text-align: center;">${slipBtnHtml}</td>
+            <td style="text-align: center;">
+              <button class="btn-action-del" onclick="deleteTransaction('${t.id}')" title="ลบรายการ">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    // View Slip in Modal
+    function viewSlip(txId) {
+      const tx = transactions.find(t => t.id === txId);
+      if (!tx || !tx.slip) return;
+
+      const modal = document.getElementById('slipModal');
+      const body = document.getElementById('modalBody');
+      const title = document.getElementById('modalTitle');
+
+      title.textContent = `หลักฐานสลิป: ${tx.category} (฿${formatNumber(tx.amount)})`;
+
+      if (tx.slip.type === 'pdf') {
+        body.innerHTML = `
+          <div style="padding: 24px; text-align: center;">
+            <p style="font-size: 1.1rem; margin-bottom: 16px;">📄 ไฟล์เอกสาร PDF: <b>${escapeHtml(tx.slip.name)}</b></p>
+            <a href="${tx.slip.dataUrl}" download="${tx.slip.name}" class="btn btn-primary" style="margin-right: 8px;">
+              ⬇️ ดาวน์โหลด PDF
+            </a>
+            <a href="${tx.slip.dataUrl}" target="_blank" class="btn btn-outline">
+              🌐 เปิดในแท็บใหม่
+            </a>
+          </div>
+        `;
+      } else {
+        body.innerHTML = `
+          <div style="text-align: center;">
+            <img src="${tx.slip.dataUrl}" alt="สลิป" style="max-height: 70vh; margin: 0 auto;">
+            <div style="margin-top: 14px;">
+              <a href="${tx.slip.dataUrl}" download="${tx.slip.name || 'slip.jpg'}" class="btn btn-outline">
+                ⬇️ ดาวน์โหลดรูปภาพสลิป
+              </a>
+            </div>
+          </div>
+        `;
+      }
+
+      modal.classList.add('open');
+    }
+
+    function closeSlipModal(e) {
+      if (e && e.target !== e.currentTarget && !e.target.classList.contains('modal-close')) return;
+      document.getElementById('slipModal').classList.remove('open');
+    }
+
+    // Export to CSV for Excel
+    function exportToCSV() {
+      if (transactions.length === 0) {
+        alert('ยังไม่มีข้อมูลสำหรับส่งออก');
+        return;
+      }
+
+      const headers = ['วันที่', 'ประเภท', 'หมวดหมู่', 'บันทึกช่วยจำ', 'จำนวนเงิน(บาท)', 'มีสลิปแนบ'];
+      const rows = transactions.map(t => [
+        t.date,
+        t.type === 'income' ? 'รายรับ' : 'รายจ่าย',
+        `"${(t.category || '').replace(/"/g, '""')}"`,
+        `"${(t.memo || '').replace(/"/g, '""')}"`,
+        t.amount.toFixed(2),
+        t.slip ? 'มีสลิป' : 'ไม่มี'
+      ]);
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `บันทึกรายรับรายจ่าย_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('ส่งออก CSV เรียบร้อยแล้ว', '📊');
+    }
+
+    // Backup to JSON
+    function backupData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `backup_expense_data_${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('สำรองข้อมูล JSON เรียบร้อยแล้ว', '💾');
+    }
+
+    // Import from JSON
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            if (confirm(`พบข้อมูล ${imported.length} รายการ ต้องการนำเข้าข้อมูลนี้ใช่หรือไม่?`)) {
+              transactions = imported;
+              saveTransactionsToStorage();
+              renderApp();
+              showToast(`นำเข้าสำเร็จ ${imported.length} รายการ`, '📥');
+            }
+          } else {
+            alert('โครงสร้างไฟล์ไม่ถูกต้อง');
+          }
+        } catch (err) {
+          alert('ไม่สามารถอ่านไฟล์ JSON ได้: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // Toast Notification helper
+    let toastTimeout;
+    function showToast(msg, icon = '✅') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').textContent = icon;
+      toast.classList.add('show');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Helpers
+    function formatNumber(num) {
+      return (num || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatDateThai(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-');
+      const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      const thaiYear = parseInt(y) + 543;
+      return `${parseInt(d)} ${thaiMonthsShort[parseInt(m) - 1]} ${thaiYear}`;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+  </script>
+</body>
+</html>
+
